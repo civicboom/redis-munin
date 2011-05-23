@@ -18,7 +18,7 @@ control:
 	echo "Version: VERSION" >> control
 	echo "Architecture: all" >> control
 	echo "Maintainer: Shish <shish@civicboom.com>" >> control
-	echo "Depends: ruby" >> control
+	echo "Depends: ruby, python, python-redis" >> control
 	echo "Description: some munin plugins to monitor redis instances" >> control
 
 clean:

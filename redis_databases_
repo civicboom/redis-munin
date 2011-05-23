@@ -1,45 +1,43 @@
-#! /bin/env ruby
+#!/usr/bin/env python
 
-require 'rubygems'
-require 'redis'
+import sys
+from redis import Redis
 
-$0 =~ /_(\d+_\d+_\d+_\d+)_(\d+)$/
-ip, port = $1, $2
-ip     = ip.nil? ? '127.0.0.1' : ip.gsub!(/_/, '.')
-port   = port.nil? ? 6379 : port
+#$0 =~ /_(\d+_\d+_\d+_\d+)_(\d+)$/
+#ip, port = $1, $2
+#ip = ip.nil? ? '127.0.0.1' : ip.gsub!(/_/, '.')
+#port = port.nil? ? 6379 : port
+ip, port = "127.0.0.1", 6379
 
-config = ARGV.any? { |a| a =~ /config/ }
+infos = {}
+for k, v in Redis(host=ip, port=port).info().items():
+    if k.startswith("db"):
+        infos[k] = v
 
-infos  = Redis.new(:host => ip, :port => port).info.inject({}) { |h, (k, v)| h[k] = v if k.to_s =~ /^db\d+/; h }.inject({}) { |hash, (dbnum, out)| out =~ /keys=(\d+),expires=(\d+)/; hash.update(dbnum => {:keys => $1.to_i, :expires => $2.to_i}) }
+if 'config' in sys.argv:
+  print "graph_title Redis Keys"
+  print "graph_category redis"
+  print "graph_info Display the number of keys by DB"
+  print "graph_args -l 0"
 
-if config
-  puts "graph_title Redis Keys"
-  puts "graph_category redis"
-  puts "graph_info Display the number of keys by DB"
-  puts "graph_args -l 0"
-
-  area_done = false
-  infos.each_key do |db|
+  area_done = False
+  for db, info in infos.items():
     type = 'STACK'
-    if !area_done
+    if not area_done:
       type = 'AREA'
-      area_done = true
-    end
-    puts "#{db}_keys.label #{db}_keys"
-    puts "#{db}_keys.info db #{db}"
-    puts "#{db}_keys.type GAUGE"
-    puts "#{db}_keys.min 0"
-    puts "#{db}_keys.draw #{type}"
+      area_done = True
+    print "%s_keys.label %s_keys" % (db, db)
+    print "%s_keys.info db %s" % (db, db)
+    print "%s_keys.type GAUGE" % db
+    print "%s_keys.min 0" % db
+    print "%s_keys.draw %s" % (db, type)
 
-    puts "#{db}_expires.label #{db}_expires"
-    puts "#{db}_expires.info db #{db}"
-    puts "#{db}_expires.type GAUGE"
-    puts "#{db}_expires.min 0"
-    puts "#{db}_expires.draw STACK"
-  end
-else
-  infos.each do |db, infos|
-    puts "#{db}_keys.value #{infos[:keys]}"
-    puts "#{db}_expires.value #{infos[:expires]}"
-  end
-end
+    print "%s_expires.label %s_expires" % (db, db)
+    print "%s_expires.info db %s" % (db, db)
+    print "%s_expires.type GAUGE" % db
+    print "%s_expires.min 0" % db
+    print "%s_expires.draw STACK" % db
+else:
+  for db, info in infos.items():
+    print "%s_keys.value %d" % (db, info['keys'])
+    print "%s_expires.value %d" % (db, info['expires'])
