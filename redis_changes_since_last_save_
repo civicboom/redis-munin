@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import os
 import sys
 from redis import Redis
 
@@ -15,7 +16,7 @@ if 'config' in sys.argv:
 
   print "changes.label changes"
 else:
-  redis = Redis(host=ip, port=port)
+  redis = Redis(host=ip, port=port, password=os.environ.get('REDIS_PASS'))
   info  = redis.info()
 
   print "changes.value" + " " + str(info['changes_since_last_save'])
